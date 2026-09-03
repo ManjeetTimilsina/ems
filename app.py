@@ -14,6 +14,8 @@ one SQLite database (ems_data.db) and one set of business-logic modules.
 import calendar
 import os
 import tempfile
+import threading
+import webbrowser
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file
@@ -657,4 +659,6 @@ def reports_export():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    url = "http://127.0.0.1:5000"
+    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    app.run(debug=False, port=5000, use_reloader=False)
