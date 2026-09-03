@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Today's Floor</h2>
+    <div class="subtitle">{{ today }} &middot; who's on, who's out, what's covered</div>
+  </div>
+  <div class="today-chip">{{ today }}</div>
+</div>
+
+<div class="stat-row">
+  <div class="stat">
+    <div class="num">{{ active_count }}</div>
+    <div class="label">Active Employees</div>
+  </div>
+  <div class="stat {{ 'good' if todays_shifts else '' }}">
+    <div class="num">{{ todays_shifts|length }}</div>
+    <div class="label">Shifts Today</div>
+  </div>
+  <div class="stat {{ 'bad' if absences_today else '' }}">
+    <div class="num">{{ absences_today|length }}</div>
+    <div class="label">Absence Today</div>
+  </div>
+  <div class="stat {{ 'warn' if total_ot else '' }}">
+    <div class="num">{{ total_ot }}</div>
+    <div class="label">OT Hours ({{ month_name }})</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <span class="card-eyebrow">Roster</span>
+        <h3>On Shift Today</h3>
+      </div>
+      <a href="{{ url_for('schedule_day', date=today) }}" class="btn btn-ghost btn-sm">Manage day →</a>
+    </div>
+    <div data-table-search-root>
+      <div class="filter-bar" style="padding-left:0; padding-right:0; margin-bottom: 12px;">
+        <div class="field field-full">
+          <label for="today_shift_search">Search by employee, shift or department</label>
+          <input type="search" id="today_shift_search" data-table-search placeholder="Type a name, shift or department…">
+        </div>
+      </div>
+
+      {% if todays_shifts %}
+      <details>
+        <summary style="cursor:pointer; font-weight:600; padding: 0 4px 10px;">
+          Show on shift today ({{ todays_shifts|length }})
+        </summary>
+        <div style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr><th>Employee</th><th>Shift</th><th>Department</th><th>Time</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for s in todays_shifts %}
+              <tr>
+                <td>{{ s.first_name }} {{ s.last_name }} <span class="muted">({{ s.employee_code }})</span></td>
+                <td>{{ s.shift_name }}</td>
+                <td>{{ s.department or '—' }}</td>
+                <td class="num-cell">{{ s.start_time }}–{{ s.end_time }}</td>
+                <td><span class="badge badge-{{ s.status|lower }}">{{ s.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      {% else %}
+      <div class="empty-state">No shifts scheduled for today yet. <a href="{{ url_for('schedule_day', date=today) }}">Assign one →</a></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <span class="card-eyebrow">{{ month_name }}</span>
+        <h3>Staffing Pulse</h3>
+      </div>
+    </div>
+    <div class="pulse-strip">
+      {% for week in weeks %}
+        {% for d in week %}
+          {% if d is none %}
+            <div class="pulse-day empty"></div>
+          {% else %}
+            {% set n = d.count %}
+            <div class="pulse-day {{ 'n0' if n==0 else ('n1' if n<=100 else ('n2' if n<=200 else ('n3' if n<=300 else 'n4'))) }}">
+              <span class="d">{{ d.day }}</span>
+              <span class="c">{{ n }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+    <div class="pulse-legend">
+      <span class="sw" style="background: #fff"></span> none
+      <span class="sw" style="background: hsl(218, 58%, 75%)"></span> light
+      <span class="sw" style="background: #3d62a1"></span> moderate
+      <span class="sw" style="background:var(--lions-blue)"></span> full
+      <span style="margin-left:auto"><a href="{{ url_for('schedule_month') }}">Open schedule →</a></span>
+    </div>
+  </div>
+</div>
+
+{% if absences_today %}
+<div class="card">
+  <div class="card-head">
+    <div>
+      <span class="card-eyebrow">Attention</span>
+      <h3>Out Today</h3>
+    </div>
+    <a href="{{ url_for('absences') }}" class="btn btn-ghost btn-sm">View all →</a>
+  </div>
+  <table>
+    <thead><tr><th>Employee</th><th>Reason</th><th>Covered By</th><th>Notes</th></tr></thead>
+    <tbody>
+      {% for a in absences_today %}
+      <tr>
+        <td>{{ a.emp_first }} {{ a.emp_last }} <span class="muted">({{ a.employee_code }})</span></td>
+        <td><span class="badge badge-{{ a.reason|lower }}">{{ a.reason }}</span></td>
+        <td>{% if a.covered_code %}{{ a.cov_first }} {{ a.cov_last }} ({{ a.covered_code }}){% else %}<span class="muted">— uncovered —</span>{% endif %}</td>
+        <td class="muted">{{ a.notes or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

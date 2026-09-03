@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Absences — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Sick / Absences</h2>
+    <div class="subtitle">Track absences and who covered each shift</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <h3>Absence Log</h3>
+    </div>
+    <div class="filter-bar">
+      <form method="get">
+        <div class="field">
+          <label for="year">Year</label>
+          <input type="number" id="year" name="year" value="{{ year or '' }}" style="width:90px;">
+        </div>
+        <div class="field">
+          <label for="month">Month</label>
+          <input type="number" id="month" name="month" min="1" max="12" value="{{ month or '' }}" style="width:70px;">
+        </div>
+        <div class="field field-full emp-search" data-employee-search data-employees='{{ employees_options|tojson }}'>
+          <label for="employee_search_absence_filter">Employee</label>
+          <input type="text" id="employee_search_absence_filter" autocomplete="off"
+                 placeholder="Search employee…" value="{{ employee_filter_label or '' }}"
+                 data-role="emp-search-input">
+          <input type="hidden" name="employee_id" value="{{ employee_id or '' }}" data-role="emp-search-value">
+          <div class="emp-search-results" data-role="emp-search-results"></div>
+        </div>
+        <button type="submit" class="btn btn-ghost">Filter</button>
+        <a href="{{ url_for('absences') }}" class="btn btn-ghost">Clear</a>
+      </form>
+    </div>
+    {% if absences %}
+    <details style="margin: 0 0 12px;">
+      <summary style="cursor:pointer; font-weight:600; padding: 0 4px 10px;">
+        Show absence log ({{ absences|length }})
+      </summary>
+      <div style="margin-top:10px;">
+        <table>
+          <thead><tr><th>Date</th><th>Employee</th><th>Type</th><th>Covered By</th><th>Notes</th><th></th></tr></thead>
+          <tbody>
+            {% for a in absences %}
+            <tr>
+              <td class="num-cell">{{ a.absence_date }}</td>
+              <td>{{ a.emp_first }} {{ a.emp_last }} <span class="muted">({{ a.employee_code }})</span></td>
+              <td><span class="badge badge-{{ a.reason|lower }}">{{ a.reason }}</span></td>
+              <td>
+                {% if a.covered_code %}
+                  {{ a.cov_first }} {{ a.cov_last }} ({{ a.covered_code }})
+                {% else %}
+                  <span class="muted">uncovered</span>
+                {% endif %}
+              </td>
+              <td class="muted">{{ a.notes or "" }}</td>
+              <td>
+                <div class="btn-row">
+                  <a href="{{ url_for('absence_edit', absence_id=a.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+                  <form method="post" action="{{ url_for('absence_delete', absence_id=a.id) }}"
+                        onsubmit="return confirm('Delete this absence record?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% else %}
+    <div class="empty-state">No absences recorded for this filter.</div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-head"><h3>Record an Absence</h3></div>
+      {% if employees %}
+      <form method="post" action="{{ url_for('absence_new') }}">
+        <div class="form-grid">
+          <div class="field field-full emp-search" data-employee-search
+               data-employees='{{ employees_options|tojson }}'>
+            <label for="employee_search_absent">Employee</label>
+            <input type="text" id="employee_search_absent" autocomplete="off" required
+                   placeholder="Type a name or code to search…"
+                   data-role="emp-search-input">
+            <input type="hidden" name="employee_id" data-role="emp-search-value">
+            <div class="emp-search-results" data-role="emp-search-results"></div>
+          </div>
+          <div class="field">
+            <label for="absence_date">Date</label>
+            <input type="date" id="absence_date" name="absence_date" required>
+          </div>
+          <div class="field">
+            <label for="reason">Type</label>
+            <select id="reason" name="reason">
+              <option value="Sick">Sick</option>
+              <option value="Personal">Personal</option>
+              <option value="Vacation">Vacation</option>
+              <option value="Other">Other</option>
+              <option value="Unpaid">Unpaid</option>
+
+            </select>
+          </div>
+          <div class="field field-full emp-search" data-employee-search
+               data-employees='{{ employees_options|tojson }}'
+               data-allow-empty="true" data-empty-label="— uncovered —">
+            <label for="employee_search_covered">Covered By (optional)</label>
+            <input type="text" id="employee_search_covered" autocomplete="off"
+                   placeholder="— uncovered — (type to search if covered)"
+                   data-role="emp-search-input">
+            <input type="hidden" name="covered_by_employee_id" data-role="emp-search-value">
+            <div class="emp-search-results" data-role="emp-search-results"></div>
+          </div>
+          <div class="field field-full">
+            <label for="notes">Notes</label>
+            <input type="text" id="notes" name="notes" placeholder="Optional">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Record Absence</button>
+        </div>
+      </form>
+      {% else %}
+      <div class="empty-state">Add active employees first.</div>
+      {% endif %}
+    </div>
+
+    <div class="card" data-table-search-root>
+      <div class="card-head"><h3>Summary by Employee</h3></div>
+      <div class="filter-bar" style="padding-left:0; padding-right:0; margin-bottom:10px;">
+        <div class="field field-full">
+          <label for="absence_summary_search">Search employee</label>
+          <input type="search" id="absence_summary_search" placeholder="Type employee name…" data-table-search data-table-search-for="#absence_summary_table">
+        </div>
+      </div>
+      {% if summary %}
+      <table id="absence_summary_table">
+        <thead><tr><th>Employee</th><th>Absences</th></tr></thead>
+        <tbody>
+          {% for s in summary %}
+          <tr>
+            <td>{{ s.first_name }} {{ s.last_name }}</td>
+            <td class="num-cell">{{ s.absence_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">No data.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

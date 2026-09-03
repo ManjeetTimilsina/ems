@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{{ data.employee.first_name }} {{ data.employee.last_name }} — {{ data.month_label }}{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>{{ data.employee.first_name }} {{ data.employee.last_name }}</h2>
+    <div class="subtitle">
+      {{ data.employee.employee_code }} &middot; {{ data.employee.position or "—" }} &middot; EFT {{ data.employee.eft }}
+      &middot; {{ data.month_label }}
+    </div>
+  </div>
+  <div class="btn-row">
+    <a href="{{ url_for('employee_summary', employee_id=data.employee.id, year=prev_year, month=prev_month) }}" class="btn btn-ghost">← Prev Month</a>
+    <a href="{{ url_for('employee_summary', employee_id=data.employee.id) }}" class="btn btn-ghost">This Month</a>
+    <a href="{{ url_for('employee_summary', employee_id=data.employee.id, year=next_year, month=next_month) }}" class="btn btn-ghost">Next Month →</a>
+    <a href="{{ url_for('employees') }}" class="btn btn-ghost">← Roster</a>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat good">
+    <div class="num">{{ data.worked_hours }}</div>
+    <div class="label">Hours Worked</div>
+  </div>
+  <div class="stat bad">
+    <div class="num">{{ data.sick_hours }}</div>
+    <div class="label">Sick Leave Hours</div>
+  </div>
+  <div class="stat warn">
+    <div class="num">{{ data.overtime_hours }}</div>
+    <div class="label">Overtime Hours</div>
+  </div>
+  <div class="stat">
+    <div class="num">{{ data.total_paid_hours }}</div>
+    <div class="label">Total Paid Hours</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <span class="card-eyebrow">Breakdown</span>
+        <h3>Hours This Month</h3>
+      </div>
+    </div>
+    <table>
+      <tbody>
+        <tr><td>Expected working hours in a year</td><td class="num-cell">{{ data.expected_hours_annually }}</td></tr>
+        <tr><td>Expected working hours in a month (EFT {{ data.employee.eft }} × standard month)</td><td class="num-cell">{{ data.expected_hours_monthly }}</td></tr>
+        <tr><td>Total assigned hours this month</td><td class="num-cell">{{ data.scheduled_hours }}</td></tr>
+        <tr><td><strong>Worked (own shifts + covering others)</strong></td><td class="num-cell"><strong>{{ data.worked_hours }}</strong></td></tr>
+        <tr><td class="muted">— of which, covering someone else's shift</td><td class="num-cell">{{ data.coverage_given_hours }}</td></tr>
+        <tr><td>Covered by someone else (not worked by them)</td><td class="num-cell">{{ data.covered_away_hours }}</td></tr>
+        <tr><td>Absent, uncovered</td><td class="num-cell">{{ data.absent_hours }}</td></tr>
+        <tr><td class="muted">— Sick leave</td><td class="num-cell">{{ data.sick_hours }}</td></tr>
+        <tr><td class="muted">— Personal leave</td><td class="num-cell">{{ data.personal_hours }}</td></tr>
+        <tr><td class="muted">— Vacation</td><td class="num-cell">{{ data.vacation_hours }}</td></tr>
+        <tr><td class="muted">— Other leave</td><td class="num-cell">{{ data.other_leave_hours }}</td></tr>
+        <tr><td class="muted">— Unpaid leave</td><td class="num-cell">{{ data.unpaid_leave_hours }}</td></tr>
+        <tr><td><strong>Total Paid leave hours</strong></td><td class="num-cell"><strong>{{ data.total_leave_hours }}</strong></td></tr>
+        <tr><td>Overtime — manual entries</td><td class="num-cell">{{ data.manual_overtime_hours }}</td></tr>
+        <tr><td class="muted">—  (daily, over {{ 8 }}h/day)</td><td class="num-cell">{{ data.auto_overtime_daily }}</td></tr>
+        <tr><td class="muted">—  (biweekly, over {{ 80 }}h/week)</td><td class="num-cell">{{ data.auto_overtime_biweekly }}</td></tr>
+        <tr><td><strong>Total overtime</strong></td><td class="num-cell"><strong>{{ data.overtime_hours }}</strong></td></tr>
+        <tr style="border-top:2px solid var(--line)"><td><strong>Total paid hours</strong></td><td class="num-cell"><strong>{{ data.total_paid_hours }}</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size:12px;margin-top:10px;">
+      Overtime beyond manual entries is auto-detected from actual hours worked (own shifts + any coverage) —
+      over an assigned shift in a single day, or over 80h in two weeks, whichever applies. Thresholds are adjustable.
+      <!-- <code>ems/reports.py</code>. -->
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <span class="card-eyebrow">{{ data.absence_count }} record(s)</span>
+        <h3>Absences This Month</h3>
+      </div>
+    </div>
+    {% if data.absences %}
+    <table>
+      <thead><tr><th>Date</th><th>Reason</th><th>Covered By</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for a in data.absences %}
+        <tr>
+          <td class="num-cell">{{ a.absence_date }}</td>
+          <td><span class="badge badge-{{ a.reason|lower }}">{{ a.reason }}</span></td>
+          <td>{% if a.covered_code %}{{ a.cov_first }} {{ a.cov_last }}{% else %}<span class="muted">uncovered</span> {% endif %} </td>
+          <td>{{ a.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No absences this month.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div>
+      <span class="card-eyebrow">{{ data.month_label }}</span>
+      <h3>Individual Schedule</h3>
+    </div>
+  </div>
+  {% if data.schedule_entries %}
+  <table>
+    <thead><tr><th>Date</th><th>Shift</th><th>Time</th><th>Hours</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+      {% for e in data.schedule_entries %}
+      <tr>
+        <td class="num-cell">{{ e.work_date }}</td>
+        <td>{{ e.shift_name }}</td>
+        <td class="num-cell">{{ e.start_time }}–{{ e.end_time }}</td>
+        <td class="num-cell">{{ e.hours }}</td>
+        <td><span class="badge badge-{{ e.status|lower }}">{{ e.status }}</span></td>
+        <td class="muted">{{ e.notes or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No shifts scheduled this month yet. Add one from the Schedule page, or set up a Recurring Pattern so it fills in automatically every month.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

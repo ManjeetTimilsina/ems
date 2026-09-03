@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Staffing Board{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="eyebrow"></span>
+        <img src="{{ url_for('static', filename='lions_logo.png') }}" alt="Lions Logo" width="50">
+        <h1>Staffing&nbsp;Board</h1>
+      </div>
+      <nav>
+        <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active == 'dashboard' else '' }}">
+          <span class="nav-num"></span> Dashboard
+        </a>
+        <a href="{{ url_for('employees') }}" class="{{ 'active' if active == 'employees' else '' }}">
+          <span class="nav-num"></span> Employees
+        </a>
+        <a href="{{ url_for('shifts') }}" class="{{ 'active' if active == 'shifts' else '' }}">
+          <span class="nav-num"></span> Shift Types
+        </a>
+        <a href="{{ url_for('schedule_month') }}" class="{{ 'active' if active == 'schedule' else '' }}">
+          <span class="nav-num"></span> Schedule
+        </a>
+        <a href="{{ url_for('absences') }}" class="{{ 'active' if active == 'absences' else '' }}">
+          <span class="nav-num"></span> Absences
+        </a>
+        <a href="{{ url_for('overtime') }}" class="{{ 'active' if active == 'overtime' else '' }}">
+          <span class="nav-num"></span> Overtime
+        </a>
+        <a href="{{ url_for('reports') }}" class="{{ 'active' if active == 'reports' else '' }}">
+          <span class="nav-num"></span> Reports
+        </a>
+      </nav>
+      <!-- <div class="sidebar-foot">
+        LOCAL · SQLITE<br>ems_data.db
+      </div> -->
+    </aside>
+
+    <main class="main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='js/employee_search.js') }}"></script>
+</body>
+</html>

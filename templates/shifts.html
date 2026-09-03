@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Shift Types — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Shift Types</h2>
+    <div class="subtitle">Reusable shift definitions used across the schedule</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head"><h3>Defined Shifts</h3></div>
+    {% if shift_types %}
+    <table>
+      <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Hours</th><th></th></tr></thead>
+      <tbody>
+        {% for s in shift_types %}
+        <tr>
+          <td>
+            <input type="text" name="name" value="{{ s.name }}" form="shift-edit-{{ s.id }}"
+                   style="border:1px solid var(--line);border-radius:3px;padding:4px 6px;width:100%">
+          </td>
+          <td class="num-cell">
+            <input type="time" name="start_time" value="{{ s.start_time }}" form="shift-edit-{{ s.id }}"
+                   style="border:1px solid var(--line);border-radius:3px;padding:4px 6px;">
+          </td>
+          <td class="num-cell">
+            <input type="time" name="end_time" value="{{ s.end_time }}" form="shift-edit-{{ s.id }}"
+                   style="border:1px solid var(--line);border-radius:3px;padding:4px 6px;">
+          </td>
+          <td class="num-cell">{{ s.hours }}</td>
+          <td>
+            <div class="btn-row">
+              <button type="submit" form="shift-edit-{{ s.id }}" class="btn btn-ghost btn-sm">Save</button>
+              <button type="submit" form="shift-delete-{{ s.id }}" class="btn btn-danger btn-sm"
+                      onclick="return confirm('Delete this shift type?');">Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% for s in shift_types %}
+      <form id="shift-edit-{{ s.id }}" method="post" action="{{ url_for('shift_edit', shift_type_id=s.id) }}"></form>
+      <form id="shift-delete-{{ s.id }}" method="post" action="{{ url_for('shift_delete', shift_type_id=s.id) }}"></form>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">No shift types yet — add one to the right.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Add Shift Type</h3></div>
+    <form method="post">
+      <div class="form-grid">
+        <div class="field field-full">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required placeholder="e.g. Morning, Evening, Night, Weekend">
+        </div>
+        <div class="field">
+          <label for="start_time">Start Time</label>
+          <input type="time" id="start_time" name="start_time" required>
+        </div>
+        <div class="field">
+          <label for="end_time">End Time</label>
+          <input type="time" id="end_time" name="end_time" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Add Shift Type</button>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin-top:10px;">Overnight shifts (end time earlier than start time) are handled automatically.</p>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

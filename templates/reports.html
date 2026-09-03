@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Reports — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Monthly Reports</h2>
+    <div class="subtitle">{{ month_name }} &middot; hours worked, leave, and OT by employee</div>
+  </div>
+  <div class="btn-row">
+    <a href="{{ url_for('reports_export', year=year, month=month) }}" class="btn btn-primary">⬇ Export to Excel</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="filter-bar">
+    <form method="get">
+      <div class="field">
+        <label for="year">Year</label>
+        <input type="number" id="year" name="year" value="{{ year }}" style="width:90px;">
+      </div>
+      <div class="field">
+        <label for="month">Month</label>
+        <input type="number" id="month" name="month" min="1" max="12" value="{{ month }}" style="width:70px;">
+      </div>
+      <div class="field field-full emp-search" data-employee-search data-employees='{{ employees_options|tojson }}'>
+        <label for="employee_search_report_filter">Employee</label>
+        <input type="text" id="employee_search_report_filter" autocomplete="off"
+               placeholder="Search employee…" value="{{ employee_filter_label or '' }}"
+               data-role="emp-search-input">
+        <input type="hidden" name="employee_id" value="{{ employee_id or '' }}" data-role="emp-search-value">
+        <div class="emp-search-results" data-role="emp-search-results"></div>
+      </div>
+      <button type="submit" class="btn btn-ghost">Update</button>
+    </form>
+  </div>
+
+  {% if summaries %}
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th><th>EFT</th><th>Annual Hours</th><th>Monthly Hours</th>
+        <th>Sick Hrs</th><th>Other Leave Hrs</th><th>OT Hrs</th><th>Total Paid</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in summaries %}
+      <tr>
+        <td>{{ s.employee.first_name }} {{ s.employee.last_name }} <span class="muted">({{ s.employee.employee_code }})</span></td>
+        <td class="num-cell">{{ s.employee.eft }}</td>
+        <td class="num-cell">{{ s.expected_hours_annually }}</td>
+        <td class="num-cell">{{ s.expected_hours_monthly }}</td>
+        <td class="num-cell">{{ s.worked_hours }}</td>
+        <td class="num-cell {{ 'variance-neg' if s.sick_hours > 0 else '' }}">{{ s.sick_hours }}</td>
+        <td class="num-cell">{{ (s.personal_hours + s.vacation_hours + s.other_leave_hours + s.unpaid_leave_hours)|round(2) }}</td>
+        <td class="num-cell {{ 'variance-pos' if s.overtime_hours > 0 else '' }}">{{ s.overtime_hours }}</td>
+        <td class="num-cell"><strong>{{ s.total_paid_hours }}</strong></td>
+        <td><a href="{{ url_for('employee_summary', employee_id=s.employee.id, year=year, month=month) }}" class="btn btn-ghost btn-sm">Detail →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot class = "foot-cell">
+      <tr>
+        <td colspan="2"><strong>Total Annual Hours</strong></td>
+        <td class="num-cell"><strong>{{ total_annual_hours }}</strong></td>
+        <td colspan="7"></td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>Total Monthly Hours</strong></td>
+        <td class="num-cell"><strong>{{ total_monthly_hours }}</strong></td>
+        <td colspan="7"></td>
+      </tr>
+    </tfoot>
+  </table>
+  <p class="muted" style="font-size:12.5px;margin-top:14px;">
+    Worked hours = shifts marked Worked or still-Scheduled, minus anything Covered by someone else or marked Absent.
+    OT Hrs includes manually-logged overtime plus auto-detected overtime (daily and biweekly thresholds).
+    Expected hours are based on {{ 173 }} hrs/month at full time (1.0 EFT).
+    Click "Detail" for a full day-by-day breakdown of any employee, or "Export to Excel" above for a
+    downloadable spreadsheet of every employee's summary for this month.
+  </p>
+  {% else %}
+  <div class="empty-state">No active employees to report on.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

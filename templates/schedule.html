@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Schedule — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Schedule</h2>
+    <div class="subtitle">{{ month_name }} &middot; click a day to assign or review shifts</div>
+  </div>
+  <div class="btn-row">
+    <a href="{{ url_for('patterns') }}" class="btn btn-ghost" target="_blank" rel="noopener">Pattern Schedule</a>
+    <a href="{{ url_for('schedule_month', year=prev_year, month=prev_month) }}" class="btn btn-ghost">← Prev</a>
+    <a href="{{ url_for('schedule_month') }}" class="btn btn-ghost">This Month</a>
+    <a href="{{ url_for('schedule_month', year=next_year, month=next_month) }}" class="btn btn-ghost">Next →</a>
+  </div>
+</div>
+
+<div class="card">
+  <table style="table-layout:fixed;">
+    <thead>
+      <tr>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for week in weeks %}
+      <tr>
+        {% for d in week %}
+          {% if d is none %}
+            <td style="background:var(--paper);border:none;"></td>
+          {% else %}
+            <td style="vertical-align:top;height:100px;{{ 'background:var(--today-bg);' if d.date == today else '' }}">
+              <a href="{{ url_for('schedule_day', date=d.date) }}" style="font-weight:700;display:block;margin-bottom:6px;">{{ d.day }}</a>
+              {% if d.entries %}
+                <div style="font-size:11px; margin-bottom:4px;">
+                  <span class="badge badge-plain" style="padding:1px 7px;font-size:10px;">{{ d.entries|length }}</span>
+                  <span class="muted">scheduled</span>
+                </div>
+              {% else %}
+                <div class="muted" style="font-size:11px;">0</div>
+              {% endif %}
+            </td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

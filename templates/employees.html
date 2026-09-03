@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Employees — Staffing Board{% endblock %}
+
+{% macro employee_row(e) %}
+<tr>
+  <td class="num-cell">{{ e.employee_code }}</td>
+  <td><a href="{{ url_for('employee_edit', employee_id=e.id) }}">{{ e.first_name }} {{ e.last_name }}</a></td>
+  <td>{{ e.position or "—" }}</td>
+  <td>{{ e.department or "—" }}</td>
+  <td class="num-cell">{{ e.eft }}</td>
+  <td><span class="badge badge-{{ e.status|lower }}">{{ e.status }}</span></td>
+  <td class="muted">{{ e.email or e.phone or "—" }}</td>
+  <td>
+    <div class="btn-row">
+      <a href="{{ url_for('employee_calendar', employee_id=e.id) }}" class="btn btn-ghost btn-sm">Calendar</a>
+      <a href="{{ url_for('employee_summary', employee_id=e.id) }}" class="btn btn-primary btn-sm">Hours & Schedule</a>
+      <a href="{{ url_for('employee_edit', employee_id=e.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+      {% if e.status == 'Active' %}
+      <form method="post" action="{{ url_for('employee_deactivate', employee_id=e.id) }}" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Deactivate</button>
+      </form>
+      {% else %}
+      <form method="post" action="{{ url_for('employee_reactivate', employee_id=e.id) }}" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Reactivate</button>
+      </form>
+      {% endif %}
+    </div>
+  </td>
+</tr>
+{% endmacro %}
+
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Employees</h2>
+    <div class="subtitle">Roster, EFT, and contact details</div>
+  </div>
+  <a href="{{ url_for('employee_new') }}" class="btn btn-primary">+ Add Employee</a>
+</div>
+
+<div class="card">
+  <div class="filter-bar">
+    <form method="get">
+      <div class="field">
+        <label for="q">Search</label>
+        <input type="text" id="q" name="q" value="{{ search }}" placeholder="Name or code">
+      </div>
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="" {{ 'selected' if not status }}>All</option>
+          <option value="Active" {{ 'selected' if status == 'Active' }}>Active</option>
+          <option value="Inactive" {{ 'selected' if status == 'Inactive' }}>Inactive</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter_by">Filter by</label>
+        <select id="filter_by" name="filter_by">
+          <option value="" {{ 'selected' if not filter_by }}>All employees</option>
+          <option value="department" {{ 'selected' if filter_by == 'department' }}>Department</option>
+          <option value="shift_type" {{ 'selected' if filter_by == 'shift_type' }}>Shift Type</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter_value">Value</label>
+        <select id="filter_value" name="filter_value">
+          <option value="">All</option>
+          {% if filter_by == 'department' %}
+            {% for dept in department_options %}
+            <option value="{{ dept }}" {{ 'selected' if filter_value == dept }}>{{ dept }}</option>
+            {% endfor %}
+          {% elif filter_by == 'shift_type' %}
+            {% for shift in shift_options %}
+            <option value="{{ shift }}" {{ 'selected' if filter_value == shift }}>{{ shift }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-ghost">Apply</button>
+    </form>
+  </div>
+
+  {% if employees %}
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Name</th><th>Position</th><th>Dept</th><th>EFT</th><th>Status</th><th>Contact</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for e in employees %}
+        {{ employee_row(e) }}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No employees match. <a href="{{ url_for('employee_new') }}">Add one →</a></div>
+  {% endif %}
+</div>
+
+{% endblock %}

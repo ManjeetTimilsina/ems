@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ date }} — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>{{ date }}</h2>
+    <div class="subtitle">Day detail &middot; assign shifts and mark status</div>
+  </div>
+  <a href="{{ url_for('schedule_month') }}" class="btn btn-ghost">← Back to month</a>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head"><h3>Assigned Shifts</h3></div>
+    {% if entries %}
+    <details style="margin: 0 0 12px;">
+      <summary style="cursor:pointer; font-weight:600; padding: 0 4px 10px;">
+        Show assigned shifts ({{ entries|length }})
+      </summary>
+      <div style="margin-top:10px;">
+        <table>
+          <thead><tr><th>Employee</th><th>Shift</th><th>Time</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for e in entries %}
+            <tr>
+              <td>{{ e.first_name }} {{ e.last_name }} <span class="muted">({{ e.employee_code }})</span></td>
+              <td>{{ e.shift_name }}</td>
+              <td class="num-cell">{{ e.start_time }}–{{ e.end_time }}</td>
+              <td><span class="badge badge-{{ e.status|lower }}">{{ e.status }}</span></td>
+              <td>
+                <div class="btn-row">
+                  <select form="status-{{ e.id }}" name="status" onchange="this.form.requestSubmit()"
+                          style="font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;">
+                    <option value="Scheduled" {{ 'selected' if e.status == 'Scheduled' }}>Scheduled</option>
+                    <option value="Worked" {{ 'selected' if e.status == 'Worked' }}>Worked</option>
+                    <option value="Absent" {{ 'selected' if e.status == 'Absent' }}>Absent</option>
+                  </select>
+                  <button type="submit" form="remove-{{ e.id }}" class="btn btn-danger btn-sm"
+                          onclick="return confirm('Remove this shift assignment?');">Remove</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% for e in entries %}
+      <form id="status-{{ e.id }}" method="post" action="{{ url_for('schedule_status', schedule_id=e.id) }}">
+        <input type="hidden" name="next" value="{{ url_for('schedule_day', date=date) }}">
+      </form>
+      <form id="remove-{{ e.id }}" method="post" action="{{ url_for('schedule_delete', schedule_id=e.id) }}">
+        <input type="hidden" name="next" value="{{ url_for('schedule_day', date=date) }}">
+      </form>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">No shifts assigned to this day yet.</div>
+    {% endif %}
+    <p class="muted" style="font-size:12px;padding:0 16px 14px;">
+      Quick status "Absent" defaults to reason Sick and updates hours immediately. For Personal/Vacation/Unpaid/Other
+      reasons, or to record who covered the shift, use <a href="{{ url_for('absences') }}">Record an Absence</a> instead —
+      either way, the hours stay in sync.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Assign a Shift</h3></div>
+    {% if employees and shift_types %}
+    <form method="post" action="{{ url_for('schedule_assign') }}">
+      <input type="hidden" name="work_date" value="{{ date }}">
+      <div class="form-grid">
+        <div class="field field-full emp-search" data-employee-search
+             data-employees='{{ employees_options|tojson }}'>
+          <label for="employee_search_schedule">Employee</label>
+          <input type="text" id="employee_search_schedule" autocomplete="off" required
+                 placeholder="Type a name or code to search…"
+                 data-role="emp-search-input">
+          <input type="hidden" name="employee_id" data-role="emp-search-value">
+          <div class="emp-search-results" data-role="emp-search-results"></div>
+        </div>
+        <div class="field field-full">
+          <label for="shift_type_id">Shift</label>
+          <select id="shift_type_id" name="shift_type_id" required>
+            {% for s in shift_types %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }}, {{ s.hours }}h)</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field field-full">
+          <label for="notes">Notes</label>
+          <input type="text" id="notes" name="notes" placeholder="Optional">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Assign Shift</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="empty-state">
+      {% if not employees %}Add active employees first.{% else %}Define a shift type first.{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

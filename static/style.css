@@ -1,0 +1,546 @@
+/* ============================================================
+   Employee Management System — "Staffing Board" design language
+   Palette: deep slate command panel + off-white worksheet area,
+   with status colors doing real signaling work (not decoration).
+   ============================================================ */
+
+:root {
+  --ink: #1B2430;          /* deep slate — sidebar, headers, primary text */
+  --ink-soft: #4A5568;     /* secondary text */
+  --paper: #F5F4F0;        /* worksheet background, warm off-white */
+  --paper-raised: #FFFFFF; /* card surfaces */
+  --line: #DEDBD3;         /* hairline borders */
+  --accent: #2F6F6B;       /* teal — primary actions, "on shift" */
+  --accent-dark: #234F4C;
+  --amber: #C97F2A;        /* overtime / attention */
+  --amber-bg: #FBEEDD;
+  --today-bg:#d5e0f3;
+  --rust: #B24C3E;         /* absence / sick */
+  --rust-bg: #F7E4E1;
+  --green: #4B8B6F;        /* covered / active */
+  --green-bg: #E4F0EA;
+  --slate-bg: #E9E7E1; 
+  --purple-bg:  #ebe2f8 ;  /* Absene / Unpaid */
+  --lions-blue: #00338D;
+  --ink-blue:#00338D;
+  --lions-gold: #EBB700;
+
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: var(--accent-dark); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------- layout --- */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--lions-blue);
+  color: #E8E6E0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand {
+  padding: 22px 20px 14px 20px;
+  display:flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-brand .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8A9A97;
+}
+
+.sidebar-brand h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: 0.01em;
+  margin: 4px 0 0 0;
+  line-height: 1.1;
+}
+
+.sidebar nav {
+  padding: 14px 0;
+  flex: 1;
+}
+
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: #C7C4BB;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+}
+
+.sidebar nav a:hover {
+  background: #EBB700;
+  color: #1b1a1a;
+  text-decoration: none;
+}
+
+.sidebar nav a.active {
+  color: #fff;
+  border-left-color: var(--accent);
+  background: #EBB700;
+}
+
+.sidebar nav .nav-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #6B7A77;
+  width: 16px;
+}
+
+.sidebar-foot {
+  padding: 14px 20px 20px 20px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #6B7A77;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 36px 60px 36px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topbar h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  margin: 0;
+  letter-spacing: 0.005em;
+}
+
+.topbar .subtitle {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  margin-top: 2px;
+}
+
+.today-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------- flashes --- */
+
+.flash {
+  padding: 10px 14px;
+  border-radius: 3px;
+  margin-bottom: 18px;
+  font-size: 13.5px;
+  border-left: 3px solid;
+}
+.flash-success { background: var(--green-bg); border-color: var(--green); color: #24503C; }
+.flash-error   { background: var(--rust-bg);  border-color: var(--rust);  color: #6E2C22; }
+
+/* ----------------------------------------------------------- cards --- */
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px 22px;
+  margin-bottom: 22px;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-head h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.card-head .card-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* --------------------------------------------------------- stat row --- */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.stat {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.stat.warn { border-left-color: var(--amber); }
+.stat.bad  { border-left-color: var(--rust); }
+.stat.good { border-left-color: var(--green); }
+
+.stat .num {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.stat .label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+/* -------------------------------------------------------- tables --- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+tbody tr:hover { background: rgba(0,0,0,0.02); }
+tbody tr:last-child td { border-bottom: none; }
+
+tfoot.foot-cell td {
+  padding: 10px 10px 8px;
+  border-top: 1px solid var(--line);
+  background: #f8f7f3;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+tfoot.foot-cell .num-cell {
+  text-align: left;
+  font-weight: 700;
+}
+
+.num-cell { font-family: var(--font-mono); }
+
+/* --------------------------------------------------------- badges --- */
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-scheduled { background: var(--slate-bg); color: var(--ink-soft); }
+.badge-worked    { background: var(--green-bg); color: #24503C; }
+.badge-covered   { background: var(--green-bg); color: #24503C; }
+.badge-absent    { background: var(--rust-bg);  color: #6E2C22; }
+.badge-active    { background: var(--green-bg); color:var(--lions-blue) }
+.badge-inactive  { background: var(--slate-bg); color: var(--lions-gold); }
+.badge-sick      { background: var(--rust-bg);  color: #6E2C22; }  
+.badge-unpaid    { background: var(--purple-bg);  color: #272829; }  
+.badge-vacation  { background: #E3E9F5; color: #1b1b1d; }
+.badge-personal  { background: var(--amber-bg); color: #7A4E17; }
+.badge-other     { background: var(--slate-bg); color: var(--ink-soft); }
+
+/* ----------------------------------------------------------- forms --- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 18px;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+
+.field label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.field input, .field select, .field textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: #fff;
+}
+
+.field-full { grid-column: 1 / -1; }
+
+.form-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* --------------------------------------------------------- buttons --- */
+
+.btn {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.btn-primary { background: var(--lions-blue); color: #fff; }
+.btn-primary:hover { background: var(--lions-gold); text-decoration: none; }
+
+.btn-ghost { background: transparent; border-color: var(--lions-gold); color: var(--ink-blue); }
+.btn-ghost:hover { background: var(--lions-gold); text-decoration: none; }
+
+.btn-danger { background: transparent; border-color: var(--lions-gold); color: var(--lions-gold); }
+.btn-danger:hover { background: var(--lions-blue); text-decoration: none; }
+
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ------------------------------------------------------ filter bar --- */
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.filter-bar form { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+
+/* --------------------------------------------------- staffing strip --- */
+/* The "signature element": a floor-board style heat strip of shift
+   counts per day, evoking a physical staffing board on the wall. */
+
+.pulse-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.pulse-day {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  border: 1px solid var(--line);
+  position: relative;
+}
+
+.pulse-day .d {
+  font-size: 10px;
+  color: var(--ink-soft);
+  position: absolute;
+  top: 3px;
+  left: 5px;
+}
+
+.pulse-day .c {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pulse-day.empty { background: transparent; border: none; }
+.pulse-day.n0 { background: #fff }
+.pulse-day.n1 { background: #98b4e4; }
+.pulse-day.n2 { background: #4b76c1;  color: #fff; }
+.pulse-day.n2 .d { color: rgba(255,255,255,0.8); }
+.pulse-day.n3 { background: #3f63a1;  color: #fff; }
+.pulse-day.n3 .d { color: rgba(255,255,255,0.8); }
+.pulse-day.n4 { background: var(--lions-blue); color: #fff; }
+.pulse-day.n4 .d { color: rgba(255,255,255,0.8); }
+
+.pulse-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 10px;
+}
+
+.pulse-legend .sw {
+  width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------- misc --- */
+
+.muted { color: var(--ink-soft); }
+.empty-state {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 22px;
+}
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; }
+  .main { padding: 20px; }
+}
+
+.variance-pos { color: var(--amber); font-weight: 600; }
+.variance-neg { color: var(--rust); font-weight: 600; }
+
+/* --------------------------------------------------- employee search --- */
+/* Type-to-search employee picker — replaces plain <select> dropdowns
+   anywhere a large roster would make scrolling a list impractical. */
+
+.emp-search { position: relative; }
+
+.emp-search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 30;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.emp-search-results.open { display: block; }
+
+.emp-search-item {
+  padding: 8px 12px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.emp-search-item:hover { background: var(--paper); }
+
+.emp-search-item-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+  border-bottom: 1px solid var(--line);
+}
+
+.emp-search-item-more {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: default;
+  text-align: center;
+}
+.emp-search-item-more:hover { background: transparent; }

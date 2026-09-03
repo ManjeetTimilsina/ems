@@ -1,0 +1,19 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with watchdog (inotify)
+ * Debugger is active!
+ * Debugger PIN: 898-906-599
+127.0.0.1 - - [31/Aug/2026 02:51:07] "POST /employees/new HTTP/1.1" 302 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "POST /absences/new HTTP/1.1" 302 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /absences HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /employees HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /shifts HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /schedule HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /patterns HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /absences HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /overtime HTTP/1.1" 200 -
+127.0.0.1 - - [31/Aug/2026 02:51:07] "GET /reports HTTP/1.1" 200 -

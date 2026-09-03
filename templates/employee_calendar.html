@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.first_name }} {{ employee.last_name }} — {{ month_label }} Calendar{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
+    <div class="subtitle">{{ employee.employee_code }} &middot; {{ month_label }} &middot; monthly calendar</div>
+  </div>
+  <div class="btn-row">
+    <a href="{{ url_for('employee_calendar', employee_id=employee.id, year=prev_year, month=prev_month) }}" class="btn btn-ghost">← Prev</a>
+    <a href="{{ url_for('employee_calendar', employee_id=employee.id) }}" class="btn btn-ghost">This Month</a>
+    <a href="{{ url_for('employee_calendar', employee_id=employee.id, year=next_year, month=next_month) }}" class="btn btn-ghost">Next →</a>
+    <a href="{{ url_for('employee_summary', employee_id=employee.id) }}" class="btn btn-ghost">Hours & List View</a>
+    <a href="{{ url_for('employees') }}" class="btn btn-ghost">← Roster</a>
+  </div>
+</div>
+
+<div class="card">
+  <table style="table-layout:fixed;">
+    <thead>
+      <tr>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for week in weeks %}
+      <tr>
+        {% for d in week %}
+          {% if d is none %}
+            <td style="background:var(--paper);border:none;"></td>
+          {% else %}
+            <td style="vertical-align:top;height:110px;  {{'background:var(--amber-bg);' if d.date == today else '' }}">
+              <a href="{{ url_for('schedule_day', date=d.date) }}" style="font-weight:700;display:block;margin-bottom:6px;">{{ d.day }}</a>
+              {% for e in d.entries %}
+                <div style="font-size:11.5px;margin-bottom:3px;">
+                  <span class="badge badge-{{ e.status|lower }}" style="padding:1px 6px;font-size:10px;">{{ e.status }}</span><br>
+                  <span class="muted">{{ e.shift_name }} {{ e.start_time }}–{{ e.end_time }}</span>
+                  {% if e.notes and 'Covering' in e.notes %}<br><span class="muted" style="font-style:italic;">↳ covering a colleague</span>{% endif %}
+                </div>
+              {% endfor %}
+              {% for o in d.ot_entries %}
+                <div style="font-size:11.5px;margin-bottom:3px;">
+                  <span class="badge" style="background:var(--amber-bg);color:#7A4E17;padding:1px 6px;font-size:10px;">OT {{ o.hours }}h</span>
+                  {% if o.reason %}<br><span class="muted">{{ o.reason }}</span>{% endif %}
+                </div>
+              {% endfor %}
+            </td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

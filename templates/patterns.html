@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Pattern Schedule — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Pattern Schedule</h2>
+    <div class="subtitle">Set a biweekly pattern once — the schedule fills itself in every month automatically</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <h3>Active &amp; Past Patterns</h3>
+    </div>
+    <div class="filter-bar" style="padding-left:0; padding-right:0;">
+      <form method="get" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
+        <div class="field field-full emp-search" data-employee-search data-employees='{{ employees_options|tojson }}'>
+          <label for="employee_search_pattern_filter">Filter by employee</label>
+          <input type="text" id="employee_search_pattern_filter" autocomplete="off"
+                 placeholder="Search employee…" value="{{ employee_filter_label or '' }}"
+                 data-role="emp-search-input">
+          <input type="hidden" name="employee_id" value="{{ employee_id or '' }}" data-role="emp-search-value">
+          <div class="emp-search-results" data-role="emp-search-results"></div>
+        </div>
+        <button type="submit" class="btn btn-ghost">Filter</button>
+       <a href="{{ url_for('patterns') }}" class = "btn btn-ghost">Clear</a>
+      </form>
+
+      <form method="post" action="{{ url_for('pattern_remove_employee') }}"
+            onsubmit="return confirm('Remove all pattern-generated shifts for the selected employee?');"
+            style="display:flex; align-items:end; margin-left:auto;">
+        <input type="hidden" name="employee_id" value="{{ employee_id or '' }}">
+        <button type="submit" class="btn btn-ghost" {% if not employee_id %}disabled{% endif %}>Remove Pattern Shifts</button>
+      </form>
+    </div>
+
+    <details style="margin: 0 0 14px;">
+      <summary style="cursor:pointer; font-weight:600; padding: 0 4px 10px;">
+        Show patterns {{ '(%d)' % patterns|length if patterns else '(0)' }}
+      </summary>
+      {% if patterns %}
+      <div style="margin-top:10px;">
+        <table>
+          <thead><tr><th>Employee</th><th>Shift</th><th>Weekday</th><th>From</th><th>Until</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for p in patterns %}
+            <tr>
+              <td>{{ p.first_name }} {{ p.last_name }} <span class="muted">({{ p.employee_code }})</span></td>
+              <td>{{ p.shift_name }} <span class="muted">({{ p.start_time }}–{{ p.end_time }})</span></td>
+              <td>{{ weekday_names[p.weekday] }}</td>
+              <td class="num-cell">{{ p.effective_start }}</td>
+              <td class="num-cell">{{ p.effective_end or "ongoing" }}</td>
+              <td>
+                {% if p.active %}
+                  <span class="badge badge-active">Active</span>
+                {% else %}
+                  <span class="badge badge-inactive">Stopped</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-row">
+                  {% if p.active %}
+                  <form method="post" action="{{ url_for('pattern_deactivate', pattern_id=p.id) }}">
+                    <button type="submit" class="btn btn-ghost btn-sm">Stop</button>
+                  </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('pattern_delete', pattern_id=p.id) }}"
+                        onsubmit="return confirm('Delete this pattern? Already-generated shifts stay on the schedule.');">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="margin-top:10px;">No recurring patterns yet — add one to the right.</div>
+      {% endif %}
+    </details>
+
+    <p class="muted" style="font-size:12.5px;margin-top:14px;padding:0 16px 16px;">
+      The current and next month are auto-generated from active patterns every time you open this app —
+      no need to manually regenerate for those. "Stop" keeps history but stops future months; "Delete" removes
+      the pattern entirely (shifts already created stay on the schedule either way).
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Generate a Specific Month</h3></div>
+    <p class="muted" style="font-size:12.5px;">
+      Automatic generation only ever fills in the current month and the one right after it (e.g. in August
+      that's August + September). To fill in a month further out from active patterns, generate it here explicitly.
+    </p>
+    <form method="post" action="{{ url_for('pattern_generate') }}">
+      <div class="form-grid">
+        <div class="field">
+          <label for="gen_year">Year</label>
+          <input type="number" id="gen_year" name="year" value="{{ today[:4] }}" required>
+        </div>
+        <div class="field">
+          <label for="gen_month">Month</label>
+          <input type="number" id="gen_month" name="month" min="1" max="12" value="{{ today[5:7]|int }}" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-ghost">Generate This Month</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Add a Pattern</h3></div>
+    {% if employees and shift_types %}
+    <form method="post" action="{{ url_for('pattern_new') }}">
+      <div class="form-grid">
+        <div class="field field-full emp-search" data-employee-search
+             data-employees='{{ employees_options|tojson }}'>
+          <label for="employee_search_pattern_add">Employee</label>
+          <input type="text" id="employee_search_pattern_add" autocomplete="off" required
+                 placeholder="Type a name or code to search…"
+                 data-role="emp-search-input">
+          <input type="hidden" name="employee_id" data-role="emp-search-value">
+          <div class="emp-search-results" data-role="emp-search-results"></div>
+        </div>
+        <div class="field field-full">
+          <label for="shift_type_id">Shift</label>
+          <select id="shift_type_id" name="shift_type_id" required>
+            {% for s in shift_types %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }}, {{ s.hours }}h)</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <!-- NEW: Frequency Field -->
+        <div class="field field-full">
+          <label for="frequency">Frequency</label>
+          <select id="frequency" name="frequency" onchange="toggleBiweeklyOptions()" required>
+            <option value="weekly">Every Week (Weekly)</option>
+            <option value="biweekly">Every Other Week (Biweekly)</option>
+          </select>
+        </div>
+
+        <!-- NEW: Biweekly Rotation Week Field (Hidden by default) -->
+        <div class="field field-full" id="biweekly_week_group" style="display: none;">
+          <label for="biweekly_week">Rotation Week</label>
+          <select id="biweekly_week" name="biweekly_week">
+            <option value="1">Week 1 (Matches Effective Date Week)</option>
+            <option value="2">Week 2 (Alternating Week)</option>
+          </select>
+        </div>
+
+        <div class="field field-full">
+          <label for="weekday">Weekday</label>
+          <select id="weekday" name="weekday" required>
+            <option value="0">Monday</option>
+            <option value="1">Tuesday</option>
+            <option value="2">Wednesday</option>
+            <option value="3">Thursday</option>
+            <option value="4">Friday</option>
+            <option value="5">Saturday</option>
+            <option value="6">Sunday</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="effective_start">Starting</label>
+          <input type="date" id="effective_start" name="effective_start" value="{{ today }}" required>
+        </div>
+        <div class="field">
+          <label for="effective_end">Until (optional)</label>
+          <input type="date" id="effective_end" name="effective_end">
+        </div>
+        <div class="field field-full">
+          <label for="notes">Notes</label>
+          <input type="text" id="notes" name="notes" placeholder="Optional">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Add Pattern</button>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin-top:10px;">
+        For a biweekly schedule pattern, toggle the frequency to **Biweekly** and specify **Week 1** or **Week 2** to establish the alternating rotation.
+      </p>
+    </form>
+    {% else %}
+    <div class="empty-state">
+      {% if not employees %}Add active employees first.{% else %}Define a shift type first.{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- NEW: Dynamic Form Visibility Script -->
+<script>
+function toggleBiweeklyOptions() {
+    var freqField = document.getElementById("frequency");
+    var rotationGroup = document.getElementById("biweekly_week_group");
+    var rotationSelect = document.getElementById("biweekly_week");
+    
+    if (freqField.value === "biweekly") {
+        rotationGroup.style.display = "block";
+        rotationSelect.setAttribute("required", "required");
+    } else {
+        rotationGroup.style.display = "none";
+        rotationSelect.removeAttribute("required");
+    }
+}
+</script>
+
+{% endblock %}

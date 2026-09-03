@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit Absence — Staffing Board{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <div>
+    <h2>Edit Absence</h2>
+    <div class="subtitle">{{ absence.emp_first }} {{ absence.emp_last }} ({{ absence.employee_code }}) &middot; {{ absence.absence_date }}</div>
+  </div>
+  <a href="{{ url_for('absences') }}" class="btn btn-ghost">← Back to log</a>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <form method="post">
+    <div class="form-grid">
+      <div class="field field-full emp-search" data-employee-search
+           data-employees='{{ employees_options|tojson }}'>
+        <label for="employee_search_edit">Employee</label>
+        <input type="text" id="employee_search_edit" autocomplete="off" required
+               placeholder="Type a name or code to search…"
+               value="{{ absence.emp_first }} {{ absence.emp_last }} ({{ absence.employee_code }})"
+               data-role="emp-search-input">
+        <input type="hidden" name="employee_id" value="{{ absence.employee_id }}" data-role="emp-search-value">
+        <div class="emp-search-results" data-role="emp-search-results"></div>
+      </div>
+      <div class="field">
+        <label for="absence_date">Date</label>
+        <input type="date" id="absence_date" name="absence_date" required value="{{ absence.absence_date }}">
+      </div>
+      <div class="field">
+        <label for="reason">Type</label>
+        <select id="reason" name="reason">
+          <option value="Sick" {{ 'selected' if absence.reason == 'Sick' }}>Sick</option>
+          <option value="Personal" {{ 'selected' if absence.reason == 'Personal' }}>Personal</option>
+          <option value="Vacation" {{ 'selected' if absence.reason == 'Vacation' }}>Vacation</option>
+          <option value="Other" {{ 'selected' if absence.reason == 'Other' }}>Other</option>
+          <option value="Unpaid" {{ 'selected' if absence.reason == 'Unpaid' }}>Unpaid</option>
+        </select>
+      </div>
+      <div class="field field-full emp-search" data-employee-search
+           data-employees='{{ employees_options|tojson }}'
+           data-allow-empty="true" data-empty-label="— uncovered —">
+        <label for="employee_search_covered_edit">Covered By (optional)</label>
+        <input type="text" id="employee_search_covered_edit" autocomplete="off"
+               placeholder="— uncovered — (type to search if covered)"
+               value="{{ (absence.cov_first ~ ' ' ~ absence.cov_last ~ ' (' ~ absence.covered_code ~ ')') if absence.covered_code else '' }}"
+               data-role="emp-search-input">
+        <input type="hidden" name="covered_by_employee_id" value="{{ absence.covered_by_employee_id or '' }}" data-role="emp-search-value">
+        <div class="emp-search-results" data-role="emp-search-results"></div>
+      </div>
+      <div class="field field-full">
+        <label for="notes">Notes</label>
+        <input type="text" id="notes" name="notes" placeholder="Optional" value="{{ absence.notes or '' }}">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('absences') }}" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+  <p class="muted" style="font-size:12.5px;margin-top:14px;">
+    Changing the employee or date moves the missed-shift link too — the old shift's Absent/Covered mark reverts
+    to Scheduled, and (if this employee has a shift that day) the new one gets marked automatically. Coverage
+    changes keep the covering employee's own calendar entry in sync either way.
+  </p>
+</div>
+
+{% endblock %}
